@@ -1,6 +1,0 @@
-build/
-*.o
-*.out
-*.db
-*.log
-.vscode/
