@@ -5,20 +5,34 @@
 void Page::update_header(){
     memcpy(data, &header, sizeof(PageHeader));
 }
+
 uint16_t Page::read_u16(uint16_t offset){
     uint16_t value;
     memcpy(&value, data + offset, 4);
 } 
 
-
 void Page::write_u16(uint16_t offset, uint16_t value){
     memcpy(data + offset, &value, 4);
 }
 
-
 bool Page::has_space_for(uint16_t length)
 {
-    return (length + sizeof(Slot)) < header.row_offset - header.slot_offset -1;
+    return (length + sizeof(Slot)) <= free_space();
+}
+
+void Page::serialize(char* dest)
+{
+    update_header();
+    memcpy(dest, data, Config::PAGE_SIZE);
+}
+
+void Page::deserialize(const char* src)
+{
+    memcpy(data, src, Config::PAGE_SIZE);
+    header.page_id = read_u16(0);
+    header.num_slots = read_u16(4);
+    header.slot_offset = read_u16(8);
+    header.row_offset = read_u16(12);
 }
 
 void Page::init(uint16_t page_id){
@@ -27,6 +41,11 @@ void Page::init(uint16_t page_id){
     header.slot_offset = sizeof(PageHeader);
     header.row_offset = sizeof(Config::PAGE_SIZE);
     update_header();
+}
+
+int Page::free_space()
+{
+    return header.row_offset - header.slot_offset -1;
 }
 
 uint16_t Page::insert_record(const char* record, uint16_t size)
