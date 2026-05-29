@@ -159,7 +159,7 @@ bool Page::update_record(uint16_t slot_id, const char* record, uint16_t new_len)
     header.row_offset -= new_len;
     memcpy(data + header.row_offset, record, new_len);
     write_u16(slot_offset, row_offset);
-    write_u16(slot_offset + sizof(Slot::offset),  new_len);
+    write_u16(slot_offset + sizeof(Slot::offset),  new_len);
     return true;
 }
 
