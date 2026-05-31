@@ -1,170 +1,138 @@
 #include "include/storage/page.h"
-#include <cstring>
+#include <algorithm>
+#include <cassert>
+#include <stdexcept>
 
-
-void Page::update_header(){
-    memcpy(data, &header, sizeof(PageHeader));
+void Page::sync_header() const {
+    std::memcpy(const_cast<Page*>(this)->data_.data(), &header_, sizeof(PageHeader));
 }
 
-uint16_t Page::read_u16(uint16_t offset){
-    uint16_t value;
-    memcpy(&value, data + offset, 4);
-} 
-
-void Page::write_u16(uint16_t offset, uint16_t value){
-    memcpy(data + offset, &value, 4);
-}
-
-bool Page::has_space_for(uint16_t length)
+void Page::load_header() 
 {
-    return (length + sizeof(Slot)) <= free_space();
+    std::memcpy(&header_, data_.data(), sizeof(PageHeader));
 }
-/* ==========================IGNORE,  may  need in future ======================*/
-// void Page::compact_page()
-// {
-//     uint8_t new_data[Config::PAGE_SIZE];
-//     uint16_t new_row_offset = Config::PAGE_SIZE;
+
+void Page::compact()
+{
+    struct Entry { uint16_t slot_id, offset, length; };
+    std::vector<Entry> live;
+    for (uint16_t i = 0; i < header_.num_slots; ++i) {
+        const SlotEntry& s = slot_at(i);
+        if (s.length > 0) live.push_back({i, s.offset, s.length});
+    }
+    std::sort(live.begin(), live.end(), [](const Entry& a, const Entry& b){
+        return a.offset > b.offset;
+    });
+
+    uint16_t write_end = static_cast<uint16_t>(Config::PAGE_SIZE);
+    for (auto& e : live) {
+        write_end -= e.length;
+        if (e.offset != write_end)
+            std::memmove(data_.data() + write_end, data_.data() + e.offset, e.length);
+        slot_at(e.slot_id).offset = write_end;
+    }
+    header_.free_space_end = write_end;
+    const std::size_t used = Config::PAGE_HEADER_SIZE + header_.num_slots * Config::SLOT_SIZE;
+    header_.free_space = static_cast<uint32_t>(write_end - used);
+    dirty_ = true;
     
-//     for(int slot_id =0; slot_id < header.num_slots; slot_id++)
-//     {
-//         // get offset
-//         uint16_t current_slot_offset = sizeof(PageHeader) + slot_id * sizeof(Slot);
-//         uint16_t current_row_offset = read_u16(current_slot_offset);
-//         uint16_t current_row_len = read_u16(current_slot_offset + sizeof(Slot::offset));
-        
-//         if(current_row_len == 0){
-//             memcpy(new_data + current_slot_offset, data+current_slot_offset, sizeof(Slot));
-//             continue;
-//         }
+    sync_header();
 
-//         new_row_offset -= current_row_offset;
-//         memcpy(new_data + new_row_offset, data + current_row_offset, current_row_len);
-//         memcpy(new_data + current_slot_offset, &new_row_offset, sizeof(new_row_offset));
-//         memcpy(new_data + current_slot_offset + sizeof(Slot::offset), &current_row_len, sizof(current_row_len));
-
-//     }
-//     // update header
-//     header.row_offset = new_row_offset;
-//     update_header();
-
-//     // copy from slots and record
-//     for(int i = sizeof(header); i < Config::PAGE_SIZE; i++)
-//     {
-//         data[i] = new_data[i];
-//     }
-//     return ;
-// }
-
-/* =============================================================*/
-
-void Page::serialize(char* dest)
-{
-    update_header();
-    memcpy(dest, data, Config::PAGE_SIZE);
+    
 }
 
-void Page::deserialize(const char* src)
+
+Page::RawData Page::to_bytes() const
 {
-    memcpy(data, src, Config::PAGE_SIZE);
-    header.page_id = read_u16(0);
-    header.num_slots = read_u16(4);
-    header.slot_offset = read_u16(8);
-    header.row_offset = read_u16(12);
+    sync_header();
+    return data_;
 }
 
-void Page::init(uint16_t page_id){
-    header.page_id =page_id;
-    header.num_slots = 0;
-    header.slot_offset = sizeof(PageHeader);
-    header.row_offset = sizeof(Config::PAGE_SIZE);
-    update_header();
+Page Page::from_bytes(const RawData& raw)
+{
+    Page p(INVALID_PAGE_ID);
+        p.data_ = raw;
+        p.load_header();
+        return p;
 }
 
-int Page::free_space()
-{
-    return header.row_offset - header.slot_offset -1;
+Page::Page(uint32_t page_id) : header_{}, data_{}, dirty_(false){
+    header_.page_id =page_id;
+    header_.num_slots = 0;
+    header_.free_space_end = static_cast<uint16_t>(Config::PAGE_SIZE);
+    header_.free_space =  static_cast<uint32_t>(Config::PAGE_SIZE - Config::PAGE_HEADER_SIZE);
+    sync_header();
 }
 
-uint16_t Page::insert_record(const char* record, uint16_t size)
+
+
+uint16_t Page::insert_record(std::vector<const std::byte> data)
 {
-    if(!has_space_for(size)){
-        return 0xFF;
+    if(data.empty()){
+        throw std::invalid_argument("cannot insert empty record");
     }
 
+    const std::size_t record_len =data.size();
     //append new row
-    uint16_t slot_id = header.num_slots;
-
-    header.row_offset = header.row_offset - size;
-    memcpy(data + header.row_offset, record, size);
-
-    //append new slot
-    write_u16(header.slot_offset, header.row_offset);
-    header.slot_offset += sizeof(Slot::offset);
-    write_u16(header.slot_offset, size);
-    header.slot_offset += sizeof(Slot::length);
-
-    header.num_slots += 1;
-
-    update_header();
-
-
-}
-
-bool Page::get_record(uint16_t slot_id, uint8_t  &out_buf, uint16_t &out_len)
-{
-    int offset = sizeof(PageHeader) + slot_id*4;
-
-    // read slot
-    uint16_t row_offset = read_u16(offset);
-    uint16_t len = read_u16(offset+4);
-    
-    // copy row(or tuple)
-    memcpy(&out_buf, data + row_offset, len);
-    out_len =len;
-    return true;
-}
-
-void Page::delete_record(uint16_t slot_id)
-{
-        int offset = sizeof(PageHeader) + slot_id * sizeof(Slot);
-        int len = read_u16(offset + sizeof(Slot::offset));
-        // try to delete deleted tuple
-        if(len == 0) return ;
-        write_u16(offset + sizeof(Slot::offset), 0);
-        return ;
-}
-
-bool Page::update_record(uint16_t slot_id, const char* record, uint16_t new_len)
-{
-    uint16_t slot_offset = sizeof(header) + slot_id * sizeof(Slot);
-    uint16_t row_offset = read_u16(slot_offset);
-    uint16_t row_len = read_u16(slot_offset + sizeof(Slot::offset));
-
-    if(row_len >= new_len)
+    uint16_t slot_id = INVALID_SLOT_ID;
+    bool new_slot = false;
+    for(uint16_t i=0; i < header_.num_slots; i++)
     {
-        memcpy(data + row_offset, record, new_len);
-        //update len
-        memcpy(data + slot_offset + sizeof(Slot::offset), &new_len, sizeof(Slot::length));
-        return true;
+        if(slot_at(i).length == 0)
+        {
+            slot_id =i; break;
+        }
     }
-    // need for compact
-   
-    
+    if(slot_id == INVALID_PAGE_ID)
+    {
+        new_slot = true;
+        slot_id = header_.num_slots;
+    }
 
+    const std::size_t needed = record_len + (new_slot ? Config::SLOT_SIZE : 0);
+    if(header_.free_space < needed)
+        throw std::runtime_error("not enough space on page");
+
+    const uint16_t new_end = static_cast<uint16_t>(header_.free_space_end - record_len);
     
-    if(!has_space_for(new_len)){
-        return false;
-    }  // no sufficent space 
+    memcpy(data_.data() + new_end, data.data(), record_len);
+    header_.free_space_end = new_end;
+
+    if(new_slot) header_.num_slots++;
+    SlotEntry& slot = slot_at(slot_id);
+    slot.offset = new_end;
+    slot.length = static_cast<uint16_t>(record_len);
+    slot.flags = 0;
     
-    header.row_offset -= new_len;
-    memcpy(data + header.row_offset, record, new_len);
-    write_u16(slot_offset, row_offset);
-    write_u16(slot_offset + sizeof(Slot::offset),  new_len);
-    return true;
+    header_.free_space -= static_cast<uint32_t>(record_len);
+    if(new_slot) header_.free_space -= static_cast<uint32_t>(Config::SLOT_SIZE);
+
+    dirty_ = true;
+    sync_header();
+    return slot_id;
+
+
 }
 
+std::optional<std::vector<std::byte>> Page::get_record(uint16_t slot_id) const
+{
+    if (slot_id >= header_.num_slots) return std::nullopt;
+    const SlotEntry& slot = slot_at(slot_id);
+    if (slot.length == 0) return std::nullopt;
+    const std::byte* src = data_.data() + slot.offset;
+    return std::vector<std::byte>(src, src + slot.length);
+}
 
-
-
-
+bool Page::delete_record(uint16_t slot_id)
+{
+    if (slot_id >= header_.num_slots) return false;
+    SlotEntry& slot = slot_at(slot_id);
+    if (slot.length == 0) return false;
+    header_.free_space += static_cast<uint32_t>(slot.length);
+    slot.offset = 0;
+    slot.length = 0;
+    dirty_      = true;
+    sync_header();
+    return true;
+}
 
