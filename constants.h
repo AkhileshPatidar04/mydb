@@ -16,3 +16,5 @@ constexpr uint16_t INVALID_SLOT_ID = 0xFFFF;
 
 
 constexpr uint32_t DIRECTORY_PAGE_ID = 0;
+
+constexpr std::size_t BUFFER_POOL_SIZE = 32;

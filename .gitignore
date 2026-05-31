@@ -6,3 +6,4 @@ build/
 .vscode/
 *.gitignore~
 gitignore
+doubt.txt
