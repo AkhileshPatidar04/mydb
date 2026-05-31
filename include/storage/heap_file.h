@@ -50,15 +50,15 @@ public:
 
 
 
-    RecordID insert_record(std::span<const std::byte> data);     // raw bytes as char(may allocate new page)  and return RecordID
+    RecordID insert_record(std::vector<const std::byte> data);     // raw bytes as char(may allocate new page)  and return RecordID
 
     std::vector<std::byte> get_record(const RecordID& rid);   //  get raw bytes(as char), return   empty vector if deleted
 
 
     // IO operation
-    Page read_pages(uint32_t page_id);
+    Page read_page(uint32_t page_id);
     void write_page(const Page& page);
-    Page Allocate_page();
+    Page allocate_page();
 
     // helper
     uint32_t num_data_pages() const {return dir_header_.num_data_pages; }

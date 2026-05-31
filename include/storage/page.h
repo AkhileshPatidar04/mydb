@@ -39,6 +39,7 @@ struct SlotEntry {
 
 //    header | slots[0...num_slots] | free space | row record[0...num_slots]
 class Page{
+public:
     using RawData = std::array<std::byte, Config::PAGE_SIZE>;
 
     explicit Page(uint32_t page_id);
