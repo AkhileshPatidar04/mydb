@@ -1,12 +1,14 @@
+#pragma once
 
 #include <cstddef>
 #include <vector>
 #include "include/storage/page.h"
 
 class ClockReplacer{
+public:
     explicit ClockReplacer(size_t num_frames);
     ~ClockReplacer();
-
+    
     // ClockReplacer(ClockReplacer&) = delete;
     // ClockReplacer& operator=(ClockReplacer&&) = delete;
 

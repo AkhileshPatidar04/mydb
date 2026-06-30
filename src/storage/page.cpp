@@ -1,22 +1,22 @@
 #include "include/storage/page.h"
 #include <cstring>
 
-Page::Page() { ResetMemory();}
+Page::Page() { resetMemory();}
 
-char* Page::getData() {return data; }
+char* Page::getData() {return data_; }
 
-const char* Page::getData() const { return data; }
+const char* Page::getData() const { return data_; }
 
 void Page::setDirty() {
-    is_dirty = true; 
+    is_dirty_ = true; 
 }
 
-bool Page::isDirty() const { return is_dirty; }
+bool Page::isDirty() const { return is_dirty_; }
 
-int Page::getPinCount() const {return pin_count;}
+int Page::getPinCount() const {return pin_count_;}
 
-page_id_t Page::getPageId() const {return page_id;}
+page_id_t Page::getPageId() const {return page_id_;}
 
-void Page::ResetMemory() {
-    std::memset(data, 0, PAGE_SIZE);
+void Page::resetMemory() {
+    std::memset(data_, 0, PAGE_SIZE);
 }
