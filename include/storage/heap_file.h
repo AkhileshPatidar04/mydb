@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <optional>
 
 #include "include/storage/page.h"
 #include "include/storage/buffer_pool_manager.h"
@@ -18,11 +19,15 @@ class HeapFile{
     public:
     HeapFile(BufferPoolManager* bpm, page_id_t first_page_id);
 
-    RecordID insertRecord(const char* data, const uint16_t len);
-    std::vector<char> getRecord(const RecordID& rid);
+    void initializeNewHeapPage(Page* page);
+
+    std::optional<RecordID> insertRecord(const char* data, const uint16_t len);
+    std::optional<std::vector<char>> getRecord(const RecordID& rid);
     bool deleteRecord(const RecordID& rid);
 
-    RecordID updateRecord(const RecordID& rid, const char* new_data, const uint16_t new_len);
+    std::optional<RecordID> updateRecord(const RecordID& rid, const char* new_data, const uint16_t new_len);
+    
+    page_id_t getFirstPageId();
     
     private:
     struct PageHeader{
@@ -37,7 +42,7 @@ class HeapFile{
     static PageHeader readHeader(const Page* page);
     static void writeHeader(Page* page, PageHeader& header);
     static Slot readSlot(const Page* page, uint16_t slot_num);
-    static void writeSlot(Page* page, uint16_t slot_num, Slot& slot);
+    static void writeSlot(Page* page, uint16_t slot_num, const Slot& slot);
     static void initializeEmptyPage(Page* page, page_id_t next_page_id);
     static uint16_t freeSpaceOnPage(const PageHeader& header);
 
@@ -46,7 +51,7 @@ class HeapFile{
 
     BufferPoolManager* bpm_; // non-owning
     page_id_t first_page_id_;
-    page_id_t last_pge_id_;
+    page_id_t last_page_id_;
 
 
 };
