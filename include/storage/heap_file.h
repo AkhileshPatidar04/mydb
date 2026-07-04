@@ -29,6 +29,24 @@ class HeapFile{
     
     page_id_t getFirstPageId();
     
+    class Iterator{
+        public:
+        Iterator(HeapFile* file, page_id_t start_page_id);
+
+        bool hasNext() const;
+        std::pair<RecordID, std::vector<char>> next();
+
+        private:
+        void advanceToNextValidSlot();
+
+        HeapFile* file_;
+        page_id_t current_page_id_;
+        uint16_t current_slot_;
+        bool has_cached_next_ = false;
+    };
+
+    Iterator begin();
+
     private:
     struct PageHeader{
         page_id_t next_page_id;

@@ -202,3 +202,59 @@ std::optional<RecordID> HeapFile::updateRecord(const RecordID& rid, const char* 
 }
 
 
+//----- HeapFile::Iterator-------
+
+HeapFile::Iterator::Iterator(HeapFile* file, page_id_t start_page_id)
+                :file_(file), current_page_id_(start_page_id), current_slot_(0){
+                    advanceToNextValidSlot();
+                }
+
+void HeapFile::Iterator::advanceToNextValidSlot(){
+    has_cached_next_ = false;
+    
+    while(current_page_id_ != INVALID_PAGE_ID)
+    {
+        Page* page = file_->bpm_->fetchPage(current_page_id_);
+        if(page == nullptr){
+            return;
+        }
+
+        PageHeader header = readHeader(page);
+        if(current_slot_ < header.num_slots){
+            Slot slot = readSlot(page, current_slot_);
+            if(slot.length > 0){
+                has_cached_next_ = true;
+                (void)file_->bpm_->unpinPage(current_page_id_, false);
+                return;
+            }
+            current_slot_++;
+        }
+
+        // move to next page
+        page_id_t next_page = header.next_page_id;
+        (void)file_->bpm_->unpinPage(current_page_id_, false);
+        current_page_id_ = next_page;
+        current_slot_ = 0;
+    }
+    return; // reached end
+}
+
+bool HeapFile::Iterator::hasNext() const { return false; }
+
+std::pair<RecordID, std::vector<char>> HeapFile::Iterator::next(){
+    RecordID rid{current_page_id_, current_slot_};
+    auto record = file_->getRecord(rid);
+
+    ++current_slot_;
+    advanceToNextValidSlot();
+
+    return {rid, std::move(*record)};
+    // HELP: 
+    // move is used to consider rvalue as temporary
+    // else it will first copy to get make pair then again cpoy as return type.
+    // it is just help for compiler. nothing affect code move(x) is asme as x
+}
+
+HeapFile::Iterator HeapFile::begin(){
+    return Iterator(this, first_page_id_);
+}
