@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstring>
-#include "include/storage/diskManager.h"
+#include "storage/diskManager.h"
 DiskManager::DiskManager(const std::string& db_file) : file_name_(db_file){
     db_io_.open(file_name_, std::ios::in | std::ios::out | std::ios::binary);
     if(!db_io_.is_open()){ // may be file does not exist
@@ -31,9 +31,7 @@ DiskManager::~DiskManager(){
 }
 
 bool DiskManager::readPage(page_id_t page_id, char* out_buf){
-    if(page_id < 0){
-        return false;
-    }
+    
     std::streamoff offset = page_id * PAGE_SIZE;
 
     db_io_.clear();
@@ -62,10 +60,7 @@ bool DiskManager::readPage(page_id_t page_id, char* out_buf){
 
 bool DiskManager::writePage(page_id_t page_id, const char* in_buf)
 {
-    if(page_id < 0){
-        return false;
-    }
-
+  
     std::streamoff offset = page_id * PAGE_SIZE;
     db_io_.seekp(offset);
     if(db_io_.fail())

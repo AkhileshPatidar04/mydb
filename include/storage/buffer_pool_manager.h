@@ -1,12 +1,14 @@
+#pragma once
+
 #include <cstddef>
 #include <vector>
 #include <list>
 #include <memory>
 #include <unordered_map>
 
-#include "include/storage/page.h"
-#include "include/storage/clock_replacer.h"
-#include "include/storage/diskManager.h"
+#include "storage/page.h"
+#include "storage/clock_replacer.h"
+#include "storage/diskManager.h"
 
 class BufferPoolManager{
 public:

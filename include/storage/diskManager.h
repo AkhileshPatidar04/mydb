@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <string>
-#include "include/storage/page.h"
+#include "storage/page.h"
 class DiskManager{
 public:
     explicit DiskManager(const std::string& db_file);

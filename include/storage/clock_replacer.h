@@ -2,12 +2,12 @@
 
 #include <cstddef>
 #include <vector>
-#include "include/storage/page.h"
+#include "storage/page.h"
 
 class ClockReplacer{
 public:
     explicit ClockReplacer(size_t num_frames);
-    ~ClockReplacer();
+    ~ClockReplacer() = default;
     
     // ClockReplacer(ClockReplacer&) = delete;
     // ClockReplacer& operator=(ClockReplacer&&) = delete;

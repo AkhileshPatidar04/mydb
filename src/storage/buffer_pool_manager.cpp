@@ -1,6 +1,5 @@
-#pragma once
 
-#include "include/storage/buffer_pool_manager.h"
+#include "storage/buffer_pool_manager.h"
 
 BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager* disk_manager)
         :   pool_size_(pool_size),
@@ -105,6 +104,21 @@ bool BufferPoolManager::unpinPage(page_id_t page_id, bool is_dirty)
     return true;
 }
 
+bool BufferPoolManager::flushPage(page_id_t page_id)
+{
+    auto it = page_table_.find(page_id);
+    if(it == page_table_.end())
+    {
+        return false;
+    }
+    Page& page = pages_[it->second];
+    if(!disk_manager_->writePage(page.getPageId(), page.getData())){
+        return false;
+    }
+
+    page.is_dirty_ = false;
+    return true;
+}
 
 Page* BufferPoolManager::newPage(page_id_t* out_page_id) {
   frame_id_t frame_id;

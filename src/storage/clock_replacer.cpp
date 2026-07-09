@@ -1,5 +1,5 @@
 
-#include "include/storage/clock_replacer.h"
+#include "storage/clock_replacer.h"
 
 ClockReplacer::ClockReplacer(size_t num_frames):
             num_frames_(num_frames), slots_(num_frames){}
@@ -34,7 +34,7 @@ bool ClockReplacer::victim(frame_id_t* frame_id)
     return false;
 }
 void ClockReplacer::pin(frame_id_t frame_id){
-    if(frame_id < 0 || static_cast<size_t>(frame_id) >= num_frames_){
+    if(static_cast<size_t>(frame_id) >= num_frames_){
         return ;
     }
     SlotState& slot = slots_[static_cast<size_t>(frame_id)];
@@ -44,7 +44,7 @@ void ClockReplacer::pin(frame_id_t frame_id){
     }
 }
 void ClockReplacer::unpin(frame_id_t frame_id){
-    if(frame_id < 0 || static_cast<size_t>(frame_id) >= num_frames_){
+    if( static_cast<size_t>(frame_id) >= num_frames_){
         return;
     }
     SlotState& slot = slots_[static_cast<frame_id_t>(frame_id)];
