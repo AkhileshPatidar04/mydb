@@ -23,7 +23,7 @@ class BPlusTree{
     struct NodeHeader{
         bool is_leaf;
         uint16_t num_keys;
-        page_id_t next_leaf; // use of it only in leaf node else it is unused;
+        page_id_t next_leaf_or_unused; // use of it only in leaf node else it is unused;
     };
     static NodeHeader readNodeHeader(const Page* page);
     static void writeNodeHeader(Page* page, const NodeHeader& header);

@@ -8,7 +8,7 @@ char* Page::getData() {return data_; }
 const char* Page::getData() const { return data_; }
 
 void Page::setDirty() {
-    is_dirty_ = true; 
+    is_dirty_ = true;
 }
 
 bool Page::isDirty() const { return is_dirty_; }
