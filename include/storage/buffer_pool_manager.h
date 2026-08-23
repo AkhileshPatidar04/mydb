@@ -8,7 +8,7 @@
 
 #include "storage/page.h"
 #include "storage/clock_replacer.h"
-#include "storage/diskManager.h"
+#include "storage/disk_manager.h"
 
 class BufferPoolManager{
 public:

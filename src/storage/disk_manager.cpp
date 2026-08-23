@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstring>
-#include "storage/diskManager.h"
+#include "storage/disk_manager.h"
 DiskManager::DiskManager(const std::string& db_file) : file_name_(db_file){
     db_io_.open(file_name_, std::ios::in | std::ios::out | std::ios::binary);
     if(!db_io_.is_open()){ // may be file does not exist
