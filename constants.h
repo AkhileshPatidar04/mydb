@@ -1,0 +1,1 @@
+constexpr uint8_t NULL_BYTE = 0xFF;

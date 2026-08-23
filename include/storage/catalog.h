@@ -58,6 +58,8 @@ class Catalog {
 
     HeapFile* getHeapFile(std::string& table_name);
 
+    BPlusTree* GetIndex(std::string_view table_name);
+
     std::vector<std::string> getTableNames() const;
 
     private:

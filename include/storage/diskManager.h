@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <string>
+#include <atomic>
 #include "storage/page.h"
 class DiskManager{
 public:
@@ -19,4 +20,5 @@ private:
     std::fstream db_io_;
     std::string file_name_;
     int next_page_id_ {0}; // use for new page allocation
+    std::atomic<int> num_flushes_{0};
 };

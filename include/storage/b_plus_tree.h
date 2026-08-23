@@ -1,5 +1,9 @@
 #pragma once 
 
+#include <optional>
+#include <cstdint>
+#include <vector>
+
 #include "storage/page.h"
 #include "storage/heap_file.h"
 #include "storage/buffer_pool_manager.h"
@@ -8,11 +12,12 @@ class BPlusTree{
     public:
     BPlusTree(BufferPoolManager* bpm, page_id_t root_page_id, int order = 4);
 
-    page_id_t getRootPageId();
-    static void initializeNewTreeRootPage(Page* page);
+    bool Insert(int32_t key, const RecordID& rid);
+    std::optional<RecordID> Search(int32_t key);
+    bool Delete(int32_t key);
 
-    std::optional<RecordID> search(int32_t key);
-    bool insert(int32_t key, const RecordID& rid);
+    page_id_t getRootPageId() const;
+    static void initializeNewTreeRootPage(Page* page);
 
     private:
     struct NodeHeader{
@@ -38,6 +43,12 @@ class BPlusTree{
     static void initializeLeafPage(Page* page, page_id_t next_leaf);
     static void initializeInternalPage(Page* page);
 
+    struct SplitResult
+    {
+        int32_t median_key;
+        page_id_t new_right_page_id;
+    };
+    std::optional<SplitResult> insertIntoNode(page_id_t node_page_id, int32_t key, const RecordID& rid, bool* out_ok);
     // it only find page id, nothing about path or parent info
     // insert/delete use there own 
     page_id_t findLeaf(int32_t key);
