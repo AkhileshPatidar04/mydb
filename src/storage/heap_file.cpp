@@ -216,11 +216,12 @@ void HeapFile::Iterator::advanceToNextValidSlot(){
     {
         Page* page = file_->bpm_->fetchPage(current_page_id_);
         if(page == nullptr){
+            current_page_id_ = INVALID_PAGE_ID;
             return;
         }
 
         PageHeader header = readHeader(page);
-        if(current_slot_ < header.num_slots){
+        while(current_slot_ < header.num_slots){
             Slot slot = readSlot(page, current_slot_);
             if(slot.length > 0){
                 has_cached_next_ = true;
@@ -239,7 +240,7 @@ void HeapFile::Iterator::advanceToNextValidSlot(){
     return; // reached end
 }
 
-bool HeapFile::Iterator::hasNext() const { return false; }
+bool HeapFile::Iterator::hasNext() const { return has_cached_next_; }
 
 std::pair<RecordID, std::vector<char>> HeapFile::Iterator::next(){
     RecordID rid{current_page_id_, current_slot_};

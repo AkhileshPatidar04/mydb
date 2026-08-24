@@ -48,9 +48,9 @@ void ClockReplacer::unpin(frame_id_t frame_id){
         return;
     }
     SlotState& slot = slots_[static_cast<frame_id_t>(frame_id)];
-    if(slot.in_clock){
+    if(!slot.in_clock){
         slot.in_clock = true;
-        slot.in_clock = true;
+        slot.refernce_bit = true;
         ++evictable_count_;
     }
 }

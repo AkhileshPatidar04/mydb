@@ -466,3 +466,86 @@ bool BPlusTree::Delete(int32_t key) {
   }
   return true;
 }
+
+
+// ---- RangeIterator ----
+
+BPlusTree::RangeIterator BPlusTree::rangeScan(int32_t start_key, int32_t end_key) {
+  page_id_t leaf_id = findLeaf(start_key);
+  return RangeIterator(this, leaf_id, start_key, end_key);
+}
+
+BPlusTree::RangeIterator::RangeIterator(BPlusTree* tree, page_id_t leaf_page_id,
+                                         int32_t start_key, int32_t end_key)
+    : tree_(tree), current_page_id_(leaf_page_id), current_index_(0), end_key_(end_key) {
+  if (current_page_id_ == INVALID_PAGE_ID) {
+    has_cached_next_ = false;
+    return;
+  }
+
+  // Position current_index_ at the first key >= start_key on this leaf.
+  Page* page = tree_->bpm_->fetchPage(current_page_id_);
+  if (page == nullptr) {
+    current_page_id_ = INVALID_PAGE_ID;
+    has_cached_next_ = false;
+    return;
+  }
+  NodeHeader header = readNodeHeader(page);
+  int idx = header.num_keys;  // default: past the end
+  for (int i = 0; i < header.num_keys; ++i) {
+    if (readLeafKey(page, i) >= start_key) {
+      idx = i;
+      break;
+    }
+  }
+  current_index_ = idx;
+  (void)tree_->bpm_->unpinPage(current_page_id_, false);
+
+  advanceToNextValid();
+}
+
+void BPlusTree::RangeIterator::advanceToNextValid() {
+  has_cached_next_ = false;
+
+  while (current_page_id_ != INVALID_PAGE_ID) {
+    Page* page = tree_->bpm_->fetchPage(current_page_id_);
+    if (page == nullptr) {
+      current_page_id_ = INVALID_PAGE_ID;
+      return;
+    }
+
+    NodeHeader header = readNodeHeader(page);
+
+    if (current_index_ < header.num_keys) {
+      int32_t key = readLeafKey(page, current_index_);
+      if (key > end_key_) {
+        (void)tree_->bpm_->unpinPage(current_page_id_, false);
+        current_page_id_ = INVALID_PAGE_ID;  // past the range, stop
+        return;
+      }
+      has_cached_next_ = true;
+      (void)tree_->bpm_->unpinPage(current_page_id_, false);
+      return;
+    }
+
+    // Exhausted this leaf -- follow next_leaf pointer.
+    page_id_t next = header.next_leaf_or_unused;
+    (void)tree_->bpm_->unpinPage(current_page_id_, false);
+    current_page_id_ = next;
+    current_index_ = 0;
+  }
+}
+
+bool BPlusTree::RangeIterator::hasNext() const { return has_cached_next_; }
+
+std::pair<int32_t, RecordID> BPlusTree::RangeIterator::next() {
+  Page* page = tree_->bpm_->fetchPage(current_page_id_);
+  int32_t key = readLeafKey(page, current_index_);
+  RecordID rid = readLeafRid(page, current_index_);
+  (void)tree_->bpm_->unpinPage(current_page_id_, false);
+
+  ++current_index_;
+  advanceToNextValid();
+
+  return {key, rid};
+}

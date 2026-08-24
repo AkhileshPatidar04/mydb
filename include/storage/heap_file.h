@@ -19,7 +19,7 @@ class HeapFile{
     public:
     HeapFile(BufferPoolManager* bpm, page_id_t first_page_id);
 
-    void initializeNewHeapPage(Page* page);
+    static void initializeNewHeapPage(Page* page);
 
     std::optional<RecordID> insertRecord(const char* data, const uint16_t len);
     std::optional<std::vector<char>> getRecord(const RecordID& rid);

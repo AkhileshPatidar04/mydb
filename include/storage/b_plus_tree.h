@@ -8,6 +8,30 @@
 #include "storage/heap_file.h"
 #include "storage/buffer_pool_manager.h"
 
+// templated) for this phase -- see project rule against premature
+// generality. Every node lives in exactly one Page; BPlusTree reaches disk
+// EXCLUSIVELY through BufferPoolManager, never DiskManager directly.
+//
+// On-page node layout (fits in one 4096-byte Page):
+//
+//   [ is_leaf: 1 byte ]
+//   [ num_keys: 2 bytes ]
+//   internal node:
+//     [ next_leaf / unused: 4 bytes -- not used by internal nodes, kept
+//       for layout uniformity so ReadNodeHeader doesn't need to branch ]
+//     [ children[0]: page_id_t (4B) ]
+//     [ key[0]: int32_t (4B) ] [ children[1]: page_id_t (4B) ]
+//     [ key[1]: int32_t (4B) ] [ children[2]: page_id_t (4B) ]
+//     ... (num_keys keys, num_keys+1 children)
+//   leaf node:
+//     [ next_leaf: page_id_t (4 bytes) ]
+//     [ key[0]: int32_t (4B) ] [ rid[0]: page_id_t(4B)+slot_num(2B) ]
+//     [ key[1]: int32_t (4B) ] [ rid[1]: ... ]
+//     ... (num_keys keys, num_keys RecordIDs)
+//
+// `order` is the maximum number of KEYS a node may hold before it must
+// split (so an internal node may have up to order+1 children).
+
 class BPlusTree{
     public:
     BPlusTree(BufferPoolManager* bpm, page_id_t root_page_id, int order = 4);
@@ -18,6 +42,26 @@ class BPlusTree{
 
     page_id_t getRootPageId() const;
     static void initializeNewTreeRootPage(Page* page);
+
+    class RangeIterator {
+    public:
+        RangeIterator(BPlusTree* tree, page_id_t leaf_page_id, int32_t start_key,
+                    int32_t end_key);
+
+        bool hasNext() const;
+        std::pair<int32_t, RecordID> next();
+
+    private:
+        void advanceToNextValid();
+
+        BPlusTree* tree_;
+        page_id_t current_page_id_;
+        int current_index_;
+        int32_t end_key_;
+        bool has_cached_next_ = false;
+    };
+
+    RangeIterator rangeScan(int32_t start_key, int32_t end_key);
 
     private:
     struct NodeHeader{
@@ -52,6 +96,12 @@ class BPlusTree{
     // it only find page id, nothing about path or parent info
     // insert/delete use there own 
     page_id_t findLeaf(int32_t key);
+
+    size_t OFFSET_IS_LEAF() const { return 0; }
+    size_t OFFSET_NUM_KEYS() const { return 1; }
+    size_t OFFSET_NEXT_LEAF() const { return 3; }
+    size_t OFFSET_BODY() const { return 7; }  // where children/keys start
+
 
     BufferPoolManager* bpm_;
     page_id_t root_page_id_;
