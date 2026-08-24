@@ -1,5 +1,6 @@
 
 #include "storage/buffer_pool_manager.h"
+#include "storage/clock_replacer.h"
 
 BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager* disk_manager)
         :   pool_size_(pool_size),

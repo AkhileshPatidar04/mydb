@@ -16,6 +16,9 @@ public:
     bool writePage(page_id_t page_id, const char* in_buf);
     page_id_t allocatePage();
 
+    //for testing only
+    int getNumFlushes() const { return num_flushes_; }
+
 private:
     std::fstream db_io_;
     std::string file_name_;

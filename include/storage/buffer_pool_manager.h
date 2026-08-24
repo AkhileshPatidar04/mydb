@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #include "storage/page.h"
-#include "storage/clock_replacer.h"
+#include "storage/replacer.h"
 #include "storage/disk_manager.h"
 
 class BufferPoolManager{
@@ -32,7 +32,7 @@ private:
     std::size_t pool_size_;
     std::vector<Page> pages_;
     std::unordered_map<page_id_t, frame_id_t> page_table_;
-    std::unique_ptr<ClockReplacer> replacer_;
+    std::unique_ptr<Replacer> replacer_;
     std::list<frame_id_t> free_list_;
     DiskManager* disk_manager_; // non-owning
 

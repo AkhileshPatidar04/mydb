@@ -2,9 +2,9 @@
 
 #include <cstddef>
 #include <vector>
-#include "storage/page.h"
+#include "storage/replacer.h"
 
-class ClockReplacer{
+class ClockReplacer: public Replacer{
 public:
     explicit ClockReplacer(size_t num_frames);
     ~ClockReplacer() = default;
@@ -12,10 +12,10 @@ public:
     // ClockReplacer(ClockReplacer&) = delete;
     // ClockReplacer& operator=(ClockReplacer&&) = delete;
 
-    bool victim(frame_id_t* frame_id);
-    void pin(frame_id_t frame_id);
-    void  unpin(frame_id_t frame_id);
-    size_t size() const;
+    bool victim(frame_id_t* frame_id) override;
+    void pin(frame_id_t frame_id) override;
+    void  unpin(frame_id_t frame_id) override;
+    size_t size() const override;
     
 
 private:
