@@ -7,9 +7,9 @@ A relational database engine built from scratch in C++ — page-based storage, b
 ## Done
 - `Page`, `DiskManager`, `ClockReplacer`, `BufferPoolManager`
 - `HeapFile` — insert / get / update / delete / iterate
+-  `BPlusTree` - indexing for faster search
 
-## In progress
-- `Catalog` and `BPlusTree` — scaffolded, not wired up or tested yet
+
 
 ## Not started
 - Row/schema serialization, SQL parser, planner, executor, TCP server, WAL, transactions, locking
