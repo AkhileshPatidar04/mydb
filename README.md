@@ -4,7 +4,7 @@ A relational database engine built from scratch in C++ — page-based storage, b
 
 
 ## storage 
-![Insert Opertion img](images/arch.png)
+![img](images/arch.png)
 
 ## Get(search) Record Flow in Storage Component
 ![Search](images/search1.png)
@@ -14,16 +14,8 @@ A relational database engine built from scratch in C++ — page-based storage, b
 ![Insert Opertion img](images/insert1.png)
 ![Insert Opertion img](images/insert2.png)
 
-
-
-**Status:** storage layer in progress, currently debugging a runtime error.
-
-## Done
-- `Page`, `DiskManager`, `ClockReplacer`, `BufferPoolManager`
-- `HeapFile` — insert / get / update / delete / iterate
--  `BPlusTree` - indexing for faster search
-
-
+## Disk File Page Layout
+![layout](images/insert2.png)
 
 ## Not started
 - Row/schema serialization, SQL parser, planner, executor, TCP server, WAL, transactions, locking
@@ -36,7 +28,7 @@ cmake ..
 make
 ```
 
-`main.cpp` is currently empty — this builds the storage layer only, no runnable entry point yet.
+
 
 ## Design
 
