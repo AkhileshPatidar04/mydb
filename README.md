@@ -15,7 +15,7 @@ A relational database engine built from scratch in C++ — page-based storage, b
 ![Insert Opertion img](images/insert2.png)
 
 ## Disk File Page Layout
-![layout](images/insert2.png)
+![layout](images/disk_file_layout.png)
 
 ## Not started
 - Row/schema serialization, SQL parser, planner, executor, TCP server, WAL, transactions, locking
