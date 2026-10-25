@@ -3,14 +3,14 @@
 A relational database engine built from scratch in C++ — page-based storage, buffer pool, B+ tree indexing, SQL parsing.
 
 
-#storage 
+## storage 
 ![Insert Opertion img](images/arch.png)
 
-#Get(search) Record Flow in Storage Component
+## Get(search) Record Flow in Storage Component
 ![Search](images/search1.png)
 ![Search](images/search2.png)
 
-#Insert Record Flow in Storage Component
+## Insert Record Flow in Storage Component
 ![Insert Opertion img](images/insert1.png)
 ![Insert Opertion img](images/insert2.png)
 
